@@ -11,7 +11,7 @@ Class extension_jet_pack extends Extension {
 		return array(
 			'name' => 'Jet Pack',
 			'version' => '1.0',
-			'release-date' => '2011-10-26',
+			'release-date' => '2011-10-31',
 			'author' => array(
 				'name' => 'Chay Palmer',
 				'website' => 'http://www.randb.com.au',
