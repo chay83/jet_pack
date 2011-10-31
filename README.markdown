@@ -1,10 +1,10 @@
 # Jet Pack
 
-- Version: 1.1.1
+- Version: 1.0alpha
 - Author: Chay
 - Release Date: October 31st 2011
-- Requirements: Symphony 2.2.1
-				Author Roles 1.0
+- Requirements: Symphony 2.2.1, 
+				Author Roles 1.0, 
 				Email Template Manager 3.0
 
 Send notifications to members of an Author Role when another group creates content
