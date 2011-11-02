@@ -2,12 +2,12 @@
 
 - Version: 1.0alpha
 - Author: Chay
-- Release Date: October 31st 2011
+- Release Date: unreleased
 - Requirements: Symphony 2.2.1, 
 				Author Roles 1.0, 
 				Email Template Manager 3.0
 
-Send notifications to members of an Author Role when another group creates content
+This extension allows email notifications to be sent to particular Authors when an Author creates new entries. Jet Pack allows new workflow rules to be created that specify the trigger Author Role and the receiver Author Role.
 
 ## Installation and Setup
 
@@ -17,11 +17,9 @@ Send notifications to members of an Author Role when another group creates conte
 
 3. 	Create an Email Template Manager template to be sent when content is created. Give the template a 'Name' and 'Subject' as well as a 'Reply-To Name' and 'Reply-To Email Address, don't worry about the recipients field.
 
-4.	Create a Jet Pack Rule by going the 'Jet Pack Rules' in the system menu, select the 'Section' you wish the rule to be applied to and select for which user group triggers the rule and which group receives the notification, then select which Email Template Manager template to use. Click Save Changes and your rule will now be active
+4.	Create a Jet Pack Rule by going the 'Jet Pack Rules' in the system menu, select the 'Section' you wish the rule to be applied to and select for which Author Role triggers the rule and which Author Role receives the notification, then select which Email Template Manager template to use. Click Save Changes and your rule will now be active.
 
 ### Template Tags
 -    {$jet-pack-user}  Prints the name of the user who has created the content
 -    {$jet-pack-section} Prints the name of the section where content was created
 -    {$jet-pack-link} Prints a HTML link to the newly created content (for a plain text email it will only print the URL)
-
-.
