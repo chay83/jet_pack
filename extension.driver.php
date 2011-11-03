@@ -8,12 +8,19 @@
 		public function about() {
 			return array(
 				'name' => 'Jet Pack',
-				'version' => '1.0',
+				'version' => '0.2',
 				'release-date' => 'unreleased',
 				'author' => array(
-					'name' => 'Chay Palmer',
-					'website' => 'http://www.randb.com.au',
-					'email' => 'chay@randb.com.au'),
+					array(
+						'name' => 'Chay Palmer',
+						'website' => 'http://www.randb.com.au',
+						'email' => 'chay@randb.com.au'
+					),
+					array(
+						'name' => 'Brendan Abbott',
+						'email' => 'brendan@bloodbone.ws'
+					)
+				),
 				'description' => 'Allows email notifications to be sent to particular Authors when an Author creates new entries.'
 			);
 		}
@@ -52,13 +59,13 @@
 				return false;
 			}
 
-			return Symphony::Database()->import("
+			return Symphony::Database()->query("
 				DROP TABLE IF EXISTS `tbl_jet_pack_rules`;
 				CREATE TABLE `tbl_jet_pack_rules` (
 				  `id` int(11) unsigned NOT NULL auto_increment,
-				  `section` int(11) NOT NULL,
-				  `role-1` int(11) NOT NULL,
-				  `role-2` int(11) NOT NULL,
+				  `section-id` int(11) NOT NULL,
+				  `cause-role-id` int(11) NOT NULL,
+				  `effect-role-id` int(11) NOT NULL,
 				  `template` varchar(50) NOT NULL,
 				  PRIMARY KEY  (`id`)
 				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -78,53 +85,52 @@
 		}
 
 		public function checkForRules($context) {
-			$entry = $context['entry']->get('id');
-			$author = Administration::instance()->Author->get('id');
+			$entry_id = $context['entry']->get('id');
+			$author_id = Administration::instance()->Author->get('id');
 			$author_roles = Symphony::ExtensionManager()->create('author_roles');
-			$section = $context['section']->get('id');
+			$section_id = $context['section']->get('id');
 
-			$id_role   = $author_roles->getAuthorRole($author);
+			$role_id = $author_roles->getAuthorRole($author);
 
 			$rules = Symphony::Database()->fetch(sprintf("
 				SELECT *
 				FROM `tbl_jet_pack_rules`
-				WHERE `section` = %d AND `role-1` = %d
+				WHERE `section-id` = %d AND `cause-role-id` = %d
 				ORDER BY `id` ASC LIMIT 1",
-				$section,
-				$id_role
+				$section_id,
+				$role_id
 			));
 
 			if(empty($rules)){
 				return true;
 			}
 			else{
-				$this->applyRule($rules[0]['id'], $author, $entry, $context['section']->get('handle'));
+				$this->applyRule($rules[0]['id'], $author_id, $entry_id, $context['section']->get('handle'));
 			}
 		}
 
-		public function applyRule($rule_id,$author,$entry,$section) {
+		public function applyRule($rule_id, $author_id, $entry_id, $section_id) {
 			include_once(EXTENSIONS . '/email_template_manager/lib/class.emailtemplatemanager.php');
 
 			$rule = RuleManager::fetch($rule_id);
 			$template = EmailTemplateManager::load($rule->get('template'));
 			$template->parseProperties();
-			$recipients = $this->getRecipients($rule->get('role-2'));
+			$recipients = $this->getRecipients($rule->get('effect-role-id'));
 
 			$template->{'recipients'} = $emails;
 			$template->parseProperties();
 			$output = $template->render();
 
-			$author = $this->getAuthor($author);
-			$entry_url = SYMPHONY_URL . '/publish/' . $section . '/edit/' . $entry . '/';
-
+			$author = AuthorManager::fetchByID($author_id);
+			$entry_url = SYMPHONY_URL . '/publish/' . $section_id . '/edit/' . $entry . '/';
 			$entry_html_url = '<a href="'. $entry_url .'"> View Entry </a>';
 
 			$search = array('{$jet-pack-user}', '{$jet-pack-section}', '{$jet-pack-link}');
-			$replace = array($author, $section, $entry_url);
 
+			$replace = array($author->getFullName(), $section_id, $entry_url);
 			$text_email = str_replace($search, $replace, $output['plain']);
 
-			$replace = array($author, $section, $entry_html_url);
+			$replace = array($author->getFullName(), $section, $entry_html_url);
 			$html_email = str_replace($search, $replace, $output['html']);
 
 			$email['content']['html'] = $html_email;
@@ -136,35 +142,23 @@
 			$this->send($email,$recipients);
 		}
 
-		public function getAuthor($id) {
-			$author = Symphony::Database()->fetch('
+		public function getRecipients($role_id) {
+			$authors = Symphony::Database()->fetch(sprintf('
 				SELECT
-					`first_name`,
-					`last_name`
+					`authors`.`id`,
+					`authors`.`first_name`,
+					`authors`.`last_name`,
+					`authors`.`email`
 				FROM
-					`tbl_authors`
+					`tbl_authors` AS `authors`
+				LEFT JOIN
+					`tbl_author_roles_authors` AS `author_roles`
+				ON
+					(`authors`.id = `author_roles`.id_author)
 				WHERE
-					`id` = ' . $id . ';'
-			);
-
-			return $author[0]['first_name'] . ' ' . $author[0]['last_name'];
-		}
-
-		public function getRecipients($role) {
-
-			$authors = Symphony::Database()->fetch('
-				SELECT
-					A.`id`,
-					A.`first_name`,
-					A.`last_name`,
-					A.`email`
-				FROM
-					`tbl_authors` A,
-					`tbl_author_roles_authors` B
-				WHERE
-					B.`id_role` = '.$role.' AND
-					B.`id_author` = A.`id`;
-			');
+					`author_roles`.`id_role` = %d
+				', $role_id
+			));
 
 			$recipients = array();
 			foreach($authors as $author){

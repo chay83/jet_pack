@@ -1,6 +1,6 @@
 # Jet Pack
 
-- Version: 1.0alpha
+- Version: 0.2
 - Author: Chay
 - Release Date: unreleased
 - Requirements: Symphony 2.2.1, 
