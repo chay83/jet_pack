@@ -16,8 +16,9 @@
 
 			$aTableHead = array(
 				array(__('Section'), 'col'),
-				array(__('For'), 'col'),
-				array(__('Email'), 'col')
+				array(__('Cause Role'), 'col'),
+				array(__('Email Template'), 'col'),
+				array(__('Notifies Role'), 'col')
 			);
 
 			$aTableBody = array();
@@ -32,7 +33,7 @@
 
 			else {
 				$sectionManager = new SectionManager(Administration::instance());
-				$authorRoles = Symphony::ExtensionManager()->get('author_roles');
+				$authorRoles = Symphony::ExtensionManager()->getInstance('author_roles');
 				$with_selected_rules = array();
 				$section_arr = array();
 				$author_roles_arr = array();
@@ -57,10 +58,15 @@
 
 					$td2 = Widget::TableData($author_roles_arr[$rule->get('cause-role-id')]);
 
-					$td3 = Widget::TableData($author_roles_arr[$rule->get('effect-role-id')]);
+					$template = EmailTemplateManager::load($rule->get('template'));
+					$td3 = Widget::TableData(Widget::Anchor(
+						$template->about['name'], SYMPHONY_URL . '/extension/email_template_manager/templates/edit/' . $rule->get('template') . '/')
+					);
+
+					$td4 = Widget::TableData($author_roles_arr[$rule->get('effect-role-id')]);
 
 					// Add cells to a row
-					$aTableBody[] = Widget::TableRow(array($td1, $td2, $td3));
+					$aTableBody[] = Widget::TableRow(array($td1, $td2, $td3, $td4));
 				}
 			}
 
@@ -115,13 +121,15 @@
 				if(!$rule_id = $this->_context[1]) redirect(extension_jet_pack::baseURL() . 'rules/');
 
 				if(!$existing = RuleManager::fetch($rule_id)){
-					throw new SymphonyErrorPage(__('The rule you requested to edit does not exist.'), __('Rule not found'), 'error');
+					throw new SymphonyErrorPage(__('The Rule you requested to edit does not exist.'), __('Rule not found'), 'error');
 				}
 			}
 
 			// Add in custom assets
+			/*
 			Administration::instance()->Page->addStylesheetToHead(URL . '/extensions/jet_pack/assets/jetpack.rules.css', 'screen', 101);
 			Administration::instance()->Page->addScriptToHead(URL . '/extensions/jet_pack/assets/jetpack.rules.js', 104);
+			*/
 
 			// Append any Page Alerts from the form's
 			if(isset($this->_context[2])){
@@ -163,7 +171,7 @@
 
 			$this->setPageType('form');
 			$sectionManager = new SectionManager($this);
-			$authorRoles = Symphony::ExtensionManager()->get('author_roles');
+			$authorRoles = Symphony::ExtensionManager()->getInstance('author_roles');
 			$sections = $sectionManager->fetch();
 
 			if($isNew) {
@@ -195,7 +203,30 @@
 
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings type-file');
-			$fieldset->appendChild(new XMLElement('legend', __('Essentials')));
+			$fieldset->appendChild(new XMLElement('legend', __('Setup')));
+			$fieldset->appendChild(
+				new XMLElement('p', __('This Rule defines what will happen when an Author create entries in a particular section. The Rule is active as soon as it is created.'), array('class' => 'help'))
+			);
+
+			$group = new XMLElement('div', null, array('class' => 'group'));
+			$div = new XMLElement('div');
+
+		// Cause Role
+			$author_roles = $authorRoles->getRoles();
+			if(empty($author_roles)) $this->pageAlert(
+				__('No Author Roles have been created yet. <a href=\'%s\'>Create one?</a>', array(SYMPHONY_URL . '/extension/author_roles/roles/new/')), Alert::ERROR
+			);
+
+			foreach($authorRoles->getRoles() as $rule) {
+				$cause_roles[] = array($rule['id'], ($fields['cause-role-id'] == $rule['id']), $rule['name']);
+				$effect_roles[] = array($rule['id'], ($fields['effect-role-id'] == $rule['id']), $rule['name']);
+			}
+
+			$label = Widget::Label(__('When an entry is created by Role'));
+			$label->appendChild(Widget::Select('fields[cause-role-id]',$cause_roles));
+
+			if(isset($this->_errors['cause-role-id'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['cause-role-id']));
+			else $div->appendChild($label);
 
 		// Section
 			$section_options = array();
@@ -203,44 +234,37 @@
 				$section_options[] = array($section->get('id'), ($fields['section-id'] ==  $section->get('id')), $section->get('name'));
 			}
 
-			$label = Widget::Label(__('Section'));
+			$label = Widget::Label(__('In this Section'));
 			$label->appendChild(Widget::Select('fields[section-id]',$section_options));
 
-			if(isset($this->_errors['section-id'])) $fieldset->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['section-id']));
-			else $fieldset->appendChild($label);
-
-		// Cause Role
-			foreach($authorRoles->getRoles() as $rule) {
-				$cause_roles[] = array($rule['id'], ($fields['cause-role-id'] == $rule['id']), $rule['name']);
-				$effect_roles[] = array($rule['id'], ($fields['effect-role-id'] == $rule['id']), $rule['name']);
-			}
-
-			$label = Widget::Label(__('When entry is created by Role'));
-			$label->appendChild(Widget::Select('fields[cause-role-id]',$cause_roles));
-
-			if(isset($this->_errors['cause-role-id'])) $fieldset->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['cause-role-id']));
-			else $fieldset->appendChild($label);
+			if(isset($this->_errors['section-id'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['section-id']));
+			else $div->appendChild($label);
 
 		// Effect Role
-			$label = Widget::Label(__('Notify all authors of the Role'));
+			$label = Widget::Label(__('Notify all authors of Role'));
 			$label->appendChild(Widget::Select('fields[effect-role-id]',$effect_roles));
 
-			if(isset($this->_errors['effect-role-id'])) $fieldset->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['effect-role-id']));
-			else $fieldset->appendChild($label);
+			if(isset($this->_errors['effect-role-id'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['effect-role-id']));
+			else $div->appendChild($label);
 
 		// Template
 			foreach(EmailTemplateManager::listAll() as $name => $template){
 				$template_options[] = array($name, ($fields['template'] == $name), $template->about['name']);
 			}
 
-			$label = Widget::Label(__('Send an email with this Template'));
+			if(empty($template_options)) $this->pageAlert(
+				__('No Email Templates have been created yet. <a href=\'%s\'>Create one?</a>', array(SYMPHONY_URL . '/extension/email_template_manager/templates/new/')), Alert::ERROR
+			);
+
+			$label = Widget::Label(__('By sending an email using this Template'));
 			$label->appendChild(Widget::Select('fields[template]',$template_options));
 
-			if(isset($this->_errors['template'])) $fieldset->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['template']));
-			else $fieldset->appendChild($label);
+			if(isset($this->_errors['template'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['template']));
+			else $div->appendChild($label);
 
 		// Save
-
+			$group->appendChild($div);
+			$fieldset->appendChild($group);
 			$this->Form->appendChild($fieldset);
 
 			$div = new XMLElement('div');
@@ -267,12 +291,12 @@
 					if(!$rule_id = $this->_context[1]) redirect(extension_jet_pack::baseURL() . 'rules/');
 
 					if(!$existing = RuleManager::fetch($rule_id)){
-						throw new SymphonyErrorPage(__('The rule you requested to edit does not exist.'), __('Rule not found'), 'error');
+						throw new SymphonyErrorPage(__('The Rule you requested to edit does not exist.'), __('Rule not found'), 'error');
 					}
 				}
 
 				$data['rules'] = array(
-					'section-id' => trim($fields['section']),
+					'section-id' => trim($fields['section-id']),
 					'cause-role-id' => trim($fields['cause-role-id']),
 					'effect-role-id' => trim($fields['effect-role-id']),
 					'template' => trim($fields['template'])
@@ -296,7 +320,7 @@
 				if(!$rule_id) redirect(extension_jet_pack::baseURL() . 'rules/');
 
 				if(!$existing = RuleManager::fetch($rule_id)){
-					throw new SymphonyErrorPage(__('The rule you requested to delete does not exist.'), __('Rule not found'), 'error');
+					throw new SymphonyErrorPage(__('The Rule you requested to delete does not exist.'), __('Rule not found'), 'error');
 				}
 
 				RuleManager::delete($rule_id);

@@ -39,9 +39,10 @@
 		public function fetchNavigation() {
 			return array(
 				array(
-					'location'	=> __('System'),
-					'name'		=> __('Jet Pack Rules'),
-					'link'		=> '/rules/'
+					'location' => __('System'),
+					'name' => __('Jet Pack Rules'),
+					'link' => '/rules/',
+					'limit' => 'developer'
 				)
 			);
 		}
@@ -84,10 +85,9 @@
 		public function checkForRules($context) {
 			$entry_id = $context['entry']->get('id');
 			$author_id = Administration::instance()->Author->get('id');
-			$author_roles = Symphony::ExtensionManager()->create('author_roles');
+			$author_roles = Symphony::ExtensionManager()->getInstance('author_roles');
 			$section_id = $context['section']->get('id');
-
-			$role_id = $author_roles->getAuthorRole($author);
+			$role_id = $author_roles->getAuthorRole($author_id);
 
 			$rules = Symphony::Database()->fetch(sprintf("
 				SELECT *
@@ -119,7 +119,7 @@
 			$output = $template->render();
 
 			$author = AuthorManager::fetchByID($author_id);
-			$entry_url = SYMPHONY_URL . '/publish/' . $section_id . '/edit/' . $entry . '/';
+			$entry_url = SYMPHONY_URL . '/publish/' . $section_id . '/edit/' . $entry_id . '/';
 			$entry_html_url = '<a href="'. $entry_url .'"> View Entry </a>';
 
 			$search = array('{$jet-pack-user}', '{$jet-pack-section}', '{$jet-pack-link}');
@@ -127,7 +127,7 @@
 			$replace = array($author->getFullName(), $section_id, $entry_url);
 			$text_email = str_replace($search, $replace, $output['plain']);
 
-			$replace = array($author->getFullName(), $section, $entry_html_url);
+			$replace = array($author->getFullName(), $section_id, $entry_html_url);
 			$html_email = str_replace($search, $replace, $output['html']);
 
 			$email['content']['html'] = $html_email;
@@ -136,7 +136,7 @@
 			$email['reply_to_name'] = $template->reply_to_name;
 			$email['reply_to_email_address'] = $template->reply_to_email_address;
 
-			$this->send($email,$recipients);
+			$this->send($email, $recipients);
 		}
 
 		public function getRecipients($role_id) {
@@ -168,22 +168,21 @@
 		public function send($msg, $recipients) {
 			$email = Email::create();
 
-			try{
+			try {
+				$email->subject = $msg['subject'];
 				$email->recipients = $recipients;
 
-				$email->subject				   = $msg['subject'];
-				$email->text_plain			   = $msg['content']['plain'];
-				$email->text_html			   = $msg['content']['html'];
+				$email->text_plain = $msg['content']['plain'];
+				$email->text_html = $msg['content']['html'];
 
 				// Optional: overwrite default sender
-				$email->sender_name			   = $msg['reply_to_name'];
-				$email->sender_email_address   = $msg['reply_to_email_address'];
+				$email->sender_name = $msg['reply_to_name'];
+				$email->sender_email_address = $msg['reply_to_email_address'];
 
 				// Optional: set a different text encoding (default is 'quoted-printable')
-				$email->text_encoding		   = 'base64';
+				$email->text_encoding = 'base64';
 
 				return $email->send();
-
 			}
 			catch(EmailGatewayException $e){
 				throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());

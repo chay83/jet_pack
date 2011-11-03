@@ -49,7 +49,6 @@
 				$result[] = RuleManager::$_pool[$rule['id']];
 			}
 
-
 			return $return_single ? current($result) : $result;
 		}
 
