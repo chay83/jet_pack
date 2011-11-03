@@ -60,7 +60,6 @@
 			}
 
 			return Symphony::Database()->query("
-				DROP TABLE IF EXISTS `tbl_jet_pack_rules`;
 				CREATE TABLE `tbl_jet_pack_rules` (
 				  `id` int(11) unsigned NOT NULL auto_increment,
 				  `section-id` int(11) NOT NULL,
@@ -73,10 +72,8 @@
 		}
 
 		public function uninstall() {
-
 			return Symphony::Database()->query("
-				DROP TABLE IF EXISTS
-					`tbl_jet_pack_rules`;
+				DROP TABLE IF EXISTS `tbl_jet_pack_rules`;
 			");
 		}
 
