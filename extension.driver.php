@@ -50,13 +50,13 @@
 		public function install() {
 			// Check for Email Template Manager
 			if(Symphony::ExtensionManager()->fetchStatus('email_template_manager') !== EXTENSION_ENABLED) {
-				Administration::instance()->Page->pageAlert(__('Please make sure that the Email Template Manager extension is installed before enabling Jet Pack.'), Alert::ERROR);
+				Administration::instance()->Page->pageAlert(__('Please make sure that the <a href=\'%s\'>Email Template Manager</a> extension is installed before enabling Jet Pack.', array('http://symphony-cms.com/download/extensions/view/64322/')), Alert::ERROR);
 				return false;
 			}
 
 			// Check for Author Roles
 			if(Symphony::ExtensionManager()->fetchStatus('author_roles') !== EXTENSION_ENABLED) {
-				Administration::instance()->Page->pageAlert(__('Please make sure that the Author Roles extension is installed before enabling Jet Pack.'), Alert::ERROR);
+				Administration::instance()->Page->pageAlert(__('Please make sure that the <a href=\'%s\'>Author Roles</a> extension is installed before enabling Jet Pack.', array('http://symphony-cms.com/download/extensions/view/62849/')), Alert::ERROR);
 				return false;
 			}
 
@@ -66,7 +66,7 @@
 				  `section-id` int(11) NOT NULL,
 				  `cause-role-id` int(11) NOT NULL,
 				  `effect-role-id` int(11) NOT NULL,
-				  `template` varchar(50) NOT NULL,
+				  `template` varchar(255) NOT NULL,
 				  PRIMARY KEY  (`id`)
 				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 			");

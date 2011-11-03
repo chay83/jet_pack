@@ -7,7 +7,7 @@
 				Author Roles 1.0,
 				Email Template Manager 3.0
 
-This extension allows email notifications to be sent to particular Authors when an Author creates new entries. Jet Pack allows new workflow rules to be created that specify the trigger Author Role and the receiver Author Role.
+This extension implements a basic workflow rule of sending email notifications to Authors of a particular Author Role when Authors of another Role create entries in a section.
 
 ## Installation and Setup
 
