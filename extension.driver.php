@@ -89,11 +89,16 @@
 			$section_id = $context['section']->get('id');
 			$role_id = $author_roles->getAuthorRole($author_id);
 
-			$rules = Symphony::Database()->fetch(sprintf("
-				SELECT *
-				FROM `tbl_jet_pack_rules`
-				WHERE `section-id` = %d AND `cause-role-id` = %d
-				ORDER BY `id` ASC LIMIT 1",
+			$rules = Symphony::Database()->fetchRow(0, sprintf("
+					SELECT `id`
+					FROM `tbl_jet_pack_rules`
+					WHERE
+						`section-id` = %d
+					AND
+						`cause-role-id` = %d
+					ORDER BY `id` ASC
+					LIMIT 1
+				",
 				$section_id,
 				$role_id
 			));
@@ -102,7 +107,7 @@
 				return true;
 			}
 			else{
-				$this->applyRule($rules[0]['id'], $author_id, $entry_id, $context['section']->get('handle'));
+				$this->applyRule($rules['id'], $author_id, $entry_id, $context['section']->get('handle'));
 			}
 		}
 
@@ -154,7 +159,8 @@
 					(`authors`.id = `author_roles`.id_author)
 				WHERE
 					`author_roles`.`id_role` = %d
-				', $role_id
+				',
+				$role_id
 			));
 
 			$recipients = array();
