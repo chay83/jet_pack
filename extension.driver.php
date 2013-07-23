@@ -48,14 +48,19 @@
 		}
 
 		public function install() {
+
+			$etm['handle'] = 'email_template_manager';
+
 			// Check for Email Template Manager
-			if(Symphony::ExtensionManager()->fetchStatus('email_template_manager') !== EXTENSION_ENABLED) {
+			if(!in_array(EXTENSION_ENABLED, Symphony::ExtensionManager()->fetchStatus($etm))) {
 				Administration::instance()->Page->pageAlert(__('Please make sure that the <a href=\'%s\'>Email Template Manager</a> extension is installed before enabling Jet Pack.', array('http://symphony-cms.com/download/extensions/view/64322/')), Alert::ERROR);
 				return false;
 			}
 
+			$ar['handle'] = 'author_roles';
+
 			// Check for Author Roles
-			if(Symphony::ExtensionManager()->fetchStatus('author_roles') !== EXTENSION_ENABLED) {
+			if(!in_array(EXTENSION_ENABLED, Symphony::ExtensionManager()->fetchStatus($ar))) {
 				Administration::instance()->Page->pageAlert(__('Please make sure that the <a href=\'%s\'>Author Roles</a> extension is installed before enabling Jet Pack.', array('http://symphony-cms.com/download/extensions/view/62849/')), Alert::ERROR);
 				return false;
 			}
@@ -116,16 +121,31 @@
 
 			$rule = RuleManager::fetch($rule_id);
 			$template = EmailTemplateManager::load($rule->get('template'));
+
+			if(is_null($template->getXML())){
+				try{
+					$template->setXML($template->processDatasources()->generate(true, 0));
+				}
+				catch(Exception $e){
+					$error = $template->getError();
+					throw new EmailTemplateException('Error including XML for rendering: ' . $e->getMessage());
+				}
+			}
+
 			$template->parseProperties();
 			$recipients = $this->getRecipients($rule->get('effect-role-id'));
+
+
 
 			$template->{'recipients'} = $emails;
 			$template->parseProperties();
 			$output = $template->render();
 
+
 			$author = AuthorManager::fetchByID($author_id);
 			$entry_url = SYMPHONY_URL . '/publish/' . $section_id . '/edit/' . $entry_id . '/';
 			$entry_html_url = '<a href="'. $entry_url .'"> View Entry </a>';
+
 
 			$search = array('{$jet-pack-user}', '{$jet-pack-section}', '{$jet-pack-link}');
 
@@ -134,6 +154,8 @@
 
 			$replace = array($author->getFullName(), $section_id, $entry_html_url);
 			$html_email = str_replace($search, $replace, $output['html']);
+
+
 
 			$email['content']['html'] = $html_email;
 			$email['content']['plain'] = $text_email;
@@ -191,7 +213,7 @@
 				return $email->send();
 			}
 			catch(EmailGatewayException $e){
-				throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+				throw new SymphonyErrorPage('Error sending email. Gateway Error:' . $e->getMessage());
 			}
 			catch(EmailException $e){
 				throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
