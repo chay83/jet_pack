@@ -8,7 +8,7 @@
 		public function about() {
 			return array(
 				'name' => 'Jet Pack',
-				'version' => '0.2',
+				'version' => '0.3',
 				'release-date' => 'unreleased',
 				'author' => array(
 					array(
