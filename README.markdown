@@ -1,11 +1,11 @@
 # Jet Pack
 
-- Version: 0.2
+- Version: 0.3
 - Author: Chay Palmer (chay@randb.com.au), Brendan Abbott (brendan@bloodbone.ws)
 - Release Date: unreleased
-- Requirements: Symphony 2.2.1,
-				Author Roles 1.0,
-				Email Template Manager 3.0
+- Requirements: Symphony 2.3.3,
+				Author Roles 1.2,
+				Email Template Manager 4.0
 
 This extension implements a basic workflow rule of sending email notifications to Authors of a particular Author Role when Authors of another Role create entries in a section.
 
