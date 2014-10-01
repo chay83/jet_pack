@@ -42,7 +42,7 @@
 					'location' => __('System'),
 					'name' => __('Jet Pack Rules'),
 					'link' => '/rules/',
-					'limit' => 'developer'
+					'limit' => 'manager'
 				)
 			);
 		}
