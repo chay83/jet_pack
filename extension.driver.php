@@ -89,7 +89,7 @@
 
 		public function checkForRules($context) {
 			$entry_id = $context['entry']->get('id');
-			$author_id = Administration::instance()->Author->get('id');
+			$author_id = Symphony::Author()->get('id');
 			$author_roles = Symphony::ExtensionManager()->getInstance('author_roles');
 			$section_id = $context['section']->get('id');
 			$role_id = $author_roles->getAuthorRole($author_id);
